@@ -18,6 +18,7 @@
           .container {
               text-align: center;
               padding: 2rem;
+              max-width: 600px;
           }
           .spinner {
               border: 4px solid rgba(255, 255, 255, 0.3);
@@ -32,23 +33,46 @@
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
           }
+          .debug {
+              margin-top: 2rem;
+              padding: 1rem;
+              background: rgba(0, 0, 0, 0.2);
+              border-radius: 8px;
+              font-size: 12px;
+              text-align: left;
+              word-break: break-all;
+          }
       </style>
   </head>
   <body>
       <div class="container">
-          <div class="spinner"></div>
+          <div class="spinner" id="spinner"></div>
           <h2>Redirecting to TradeBase...</h2>
           <p id="message">Please wait</p>
+          <div class="debug" id="debug"></div>
       </div>
 
       <script>
           function redirect() {
+              const debugEl = document.getElementById('debug');
+              const messageEl = document.getElementById('message');
+              const spinnerEl = document.getElementById('spinner');
+
               try {
                   // Extract tokens from URL hash (Supabase sends them as hash fragments)
                   const hash = window.location.hash.substring(1);
                   const params = new URLSearchParams(hash);
                   const accessToken = params.get('access_token');
                   const refreshToken = params.get('refresh_token');
+
+                  // Show debug info
+                  debugEl.innerHTML = `
+                      <strong>Debug Info:</strong><br>
+                      Full URL: ${window.location.href}<br>
+                      Hash: ${hash || '(empty)'}<br>
+                      Access Token: ${accessToken ? 'Present ✓' : 'Missing ✗'}<br>
+                      Refresh Token: ${refreshToken ? 'Present ✓' : 'Missing ✗'}
+                  `;
 
                   console.log('Hash:', hash);
                   console.log('Access Token:', accessToken ? 'Present' : 'Missing');
@@ -59,15 +83,29 @@
                       const appUrl =
   `tradebase://reset-password?access_token=${accessToken}&refresh_token=${refreshToken}`;
                       console.log('Redirecting to:', appUrl);
+
+                      messageEl.textContent = 'Opening TradeBase app...';
+                      debugEl.innerHTML += `<br><br>Redirecting to app...`;
+
                       window.location.href = appUrl;
+
+                      // After 3 seconds, show a message if still on this page
+                      setTimeout(() => {
+                          spinnerEl.style.display = 'none';
+                          messageEl.textContent = 'If the app didn\'t open automatically, please 
+  try again or make sure TradeBase is installed.';
+                      }, 3000);
                   } else {
-                      document.getElementById('message').textContent = 'Invalid reset link. 
-  Please request a new one.';
+                      spinnerEl.style.display = 'none';
+                      messageEl.textContent = 'Invalid reset link. Please request a new one.';
+                      debugEl.innerHTML += `<br><br><strong>Error:</strong> No tokens found in 
+  URL`;
                   }
               } catch (error) {
                   console.error('Redirect error:', error);
-                  document.getElementById('message').textContent = 'An error occurred. Please try
-   again.';
+                  spinnerEl.style.display = 'none';
+                  messageEl.textContent = 'An error occurred. Please try again.';
+                  debugEl.innerHTML += `<br><br><strong>Error:</strong> ${error.message}`;
               }
           }
 
