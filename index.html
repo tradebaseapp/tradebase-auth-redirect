@@ -3,7 +3,36 @@
   <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>TradeBase - Resetting Password...</title>
+      <title>TradeBase - Redirecting...</title>
+      <script>
+          // Extract tokens and redirect immediately
+          (function() {
+              const hash = window.location.hash.substring(1);
+              if (hash) {
+                  const params = new URLSearchParams(hash);
+                  const accessToken = params.get('access_token');
+                  const refreshToken = params.get('refresh_token');
+
+                  if (accessToken && refreshToken) {
+                      const appUrl = 'tradebase://reset-password?' +
+                          'access_token=' + encodeURIComponent(accessToken) +
+                          '&refresh_token=' + encodeURIComponent(refreshToken);
+
+                      // Try to redirect immediately
+                      window.location.href = appUrl;
+
+                      // Also set a timeout to show instructions if redirect fails
+                      setTimeout(function() {
+                          document.getElementById('app-link').href = appUrl;
+                          document.getElementById('app-link').style.display = 'inline-block';
+                          document.getElementById('spinner').style.display = 'none';
+                          document.getElementById('message').textContent = 'Tap the button below 
+  if the app didn\'t open automatically:';
+                      }, 2000);
+                  }
+              }
+          })();
+      </script>
       <style>
           body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -14,103 +43,56 @@
               margin: 0;
               background: linear-gradient(135deg, #0087FF 0%, #0064CC 100%);
               color: white;
-          }
-          .container {
               text-align: center;
               padding: 2rem;
-              max-width: 600px;
+          }
+          .container {
+              max-width: 500px;
           }
           .spinner {
               border: 4px solid rgba(255, 255, 255, 0.3);
               border-radius: 50%;
               border-top: 4px solid white;
-              width: 40px;
-              height: 40px;
+              width: 50px;
+              height: 50px;
               animation: spin 1s linear infinite;
-              margin: 0 auto 1rem;
+              margin: 0 auto 2rem;
           }
           @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
           }
-          .debug {
-              margin-top: 2rem;
-              padding: 1rem;
-              background: rgba(0, 0, 0, 0.2);
-              border-radius: 8px;
-              font-size: 12px;
-              text-align: left;
-              word-break: break-all;
+          h1 {
+              font-size: 28px;
+              margin-bottom: 1rem;
+          }
+          p {
+              font-size: 16px;
+              opacity: 0.9;
+              margin-bottom: 2rem;
+          }
+          .app-link {
+              display: none;
+              background: white;
+              color: #0087FF;
+              padding: 16px 32px;
+              border-radius: 12px;
+              text-decoration: none;
+              font-weight: 600;
+              font-size: 18px;
+              transition: transform 0.2s;
+          }
+          .app-link:active {
+              transform: scale(0.95);
           }
       </style>
   </head>
   <body>
       <div class="container">
           <div class="spinner" id="spinner"></div>
-          <h2>Redirecting to TradeBase...</h2>
-          <p id="message">Please wait</p>
-          <div class="debug" id="debug"></div>
+          <h1>Redirecting to TradeBase</h1>
+          <p id="message">Please wait while we open the app...</p>
+          <a href="#" id="app-link" class="app-link">Open TradeBase App</a>
       </div>
-
-      <script>
-          function redirect() {
-              const debugEl = document.getElementById('debug');
-              const messageEl = document.getElementById('message');
-              const spinnerEl = document.getElementById('spinner');
-
-              try {
-                  // Extract tokens from URL hash (Supabase sends them as hash fragments)
-                  const hash = window.location.hash.substring(1);
-                  const params = new URLSearchParams(hash);
-                  const accessToken = params.get('access_token');
-                  const refreshToken = params.get('refresh_token');
-
-                  // Show debug info
-                  debugEl.innerHTML = `
-                      <strong>Debug Info:</strong><br>
-                      Full URL: ${window.location.href}<br>
-                      Hash: ${hash || '(empty)'}<br>
-                      Access Token: ${accessToken ? 'Present ✓' : 'Missing ✗'}<br>
-                      Refresh Token: ${refreshToken ? 'Present ✓' : 'Missing ✗'}
-                  `;
-
-                  console.log('Hash:', hash);
-                  console.log('Access Token:', accessToken ? 'Present' : 'Missing');
-                  console.log('Refresh Token:', refreshToken ? 'Present' : 'Missing');
-
-                  if (accessToken && refreshToken) {
-                      // Redirect to app with tokens
-                      const appUrl =
-  `tradebase://reset-password?access_token=${accessToken}&refresh_token=${refreshToken}`;
-                      console.log('Redirecting to:', appUrl);
-
-                      messageEl.textContent = 'Opening TradeBase app...';
-                      debugEl.innerHTML += `<br><br>Redirecting to app...`;
-
-                      window.location.href = appUrl;
-
-                      // After 3 seconds, show a message if still on this page
-                      setTimeout(() => {
-                          spinnerEl.style.display = 'none';
-                          messageEl.textContent = 'If the app didn\'t open automatically, please 
-  try again or make sure TradeBase is installed.';
-                      }, 3000);
-                  } else {
-                      spinnerEl.style.display = 'none';
-                      messageEl.textContent = 'Invalid reset link. Please request a new one.';
-                      debugEl.innerHTML += `<br><br><strong>Error:</strong> No tokens found in 
-  URL`;
-                  }
-              } catch (error) {
-                  console.error('Redirect error:', error);
-                  spinnerEl.style.display = 'none';
-                  messageEl.textContent = 'An error occurred. Please try again.';
-                  debugEl.innerHTML += `<br><br><strong>Error:</strong> ${error.message}`;
-              }
-          }
-
-          // Wait a moment for URL to fully load, then redirect
-          setTimeout(redirect, 500);
-      </script>
   </body>
   </html>
